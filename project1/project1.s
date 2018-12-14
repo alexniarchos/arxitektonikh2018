@@ -1,10 +1,10 @@
 .data
     array:  
-        .word 0xD410402200200000
+        .word 0x5410402200200000
 
     len:  .word 150
     
-    mask: .word 0x7FF0000000000000,0x000FFFFFFFFFFFFF,0x8000000000000000
+    mask: .word 0x7FF0000000000000,0x000FFFFFFFFFFFFF,0x0000000000000001
 
     CONTROL: .word 0x10000
 	DATA:    .word 0x10008
@@ -22,8 +22,10 @@ main:
     daddi r10,$zero,8
     ld r3,mask(r10)
     and r3,r1,r3            # r3 mantissa
-    daddi r10,$zero,63      # problem
-    dsrav r4,r1,r10
+    daddi r10,$zero,63      
+    dsrav r6,r1,r10
     daddi r10,$zero,16
     ld r5,mask(r10)
+    and r4,r6,r5            # r4 sign
+    
     halt
