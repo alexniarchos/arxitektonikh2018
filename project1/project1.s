@@ -28,4 +28,19 @@ main:
     ld r5,mask(r10)
     and r4,r6,r5            # r4 sign
     
+    # exponent 8etikos arnhtikos
+    # 8etikos h oudeteros
+        # pairnw deutero kataxwrhth
+        # bit bit shift aristera thn mantissa kai to 1 p einai mprosta apo thn mantissa 1.1101
+        # shift kai ton deutero kataxwrhth
+        # ka8e stoixeio p baginei aristera twn 52 xamhlwn bit to pros8etw ston deutero kataxwrhth
+        # overflow check
+        # telos loupas
+        # teleutaio shift mantisa
+        # an to bit pou bgei aristera twn 52 einai 1
+        # tote stroggulopoihsh pros ta epanw
+        # alliws stroggulopoihsh pros ta katw
+        # ftiaxnw ton tupo ths mantissas
+    # arnhtikos
+        # tsekarw ton exponent an einai >2 apeu8eias 0 an einai 1 tote 1
     halt
