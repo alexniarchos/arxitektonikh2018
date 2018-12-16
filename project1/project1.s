@@ -106,35 +106,39 @@
 .text
 
 main:
-    # r26-r31 counters
+    # r25-r30 counters
     dadd r23,$zero,$zero # r23 index counter
     ld r24,len($zero)    # r24 max index
-    daddi r18,$zero,8    
-    dmul r24,r24,r18     # max_index*8 because 64bit data
+    daddi r5,$zero,8    
+    daddi r1,$zero,8
+    daddi r2,$zero,16
+    daddi r3,$zero,24
+    daddi r4,$zero,32
+    dmul r24,r24,r5     # max_index*8 because 64bit data
+    daddi r5,$zero,40
+    ld r13, mask(r0)     # load masks
+    ld r14, mask(r1)
+    ld r15, mask(r2)
+    ld r16, mask(r3)
+    ld r17, mask(r4)
+    ld r18, mask(r5)
 bigloop:    
     slt r19,r23,r24      # loop guard
     beq r19,$zero,end    # go to prints    
     daddi r20,$zero,0    # reset flag
     ld r1,A(r23)         # take next number
-    ld r3,mask($zero)    # mask for polarized exponent
-    and r2,r1,r3         # logical end number with exponent mask
+    and r2,r1,r13         # logical end number with exponent mask
     daddi r10,$zero,52   
     dsrav r2,r2,r10      # shift right 52 times to have the real polarized exponent number
     daddi r10,$zero,1023    
     dsub r2,r2,r10          # r2 exponent without polarazation
-    daddi r10,$zero,8       # go to next mask
-    ld r3,mask(r10)         # mask for mantissa
-    and r3,r1,r3            # r3 mantissa
+    and r3,r1,r14            # r3 mantissa
     daddi r10,$zero,63      
     dsrav r6,r1,r10         # shift right 63 times
-    daddi r10,$zero,16
-    ld r5,mask(r10)         # mask for trash bits
-    and r4,r6,r5            # r4 sign   
     daddi r10,$zero,1024
+    and r4,r6,r15            # r4 sign       
     beq r2,r10,checkabnormal    # check if exponent has max number because it can represent infinity
 normal:
-    daddi r10,$zero,24
-    ld r6,mask(r10)
     slt r11,r2,$zero
     bne r11,$zero,negative_exp # check exponent 8etikos h arnhtikos
     # 8etikos h oudeteros
@@ -145,22 +149,19 @@ loop:
     beq r2,$zero,endloop    
     dsll r3,r3,1    # bit bit shift aristera thn mantissa
     dsll r5,r5,1    # shift kai ton deutero kataxwrhth
-    and r7,r3,r6    # ka8e stoixeio p baginei aristera twn 52 xamhlwn bit to pros8etw ston deutero kataxwrhth:pairnw mono to stoixeio p bghke me bitwise and
+    and r7,r3,r16    # ka8e stoixeio p baginei aristera twn 52 xamhlwn bit to pros8etw ston deutero kataxwrhth:pairnw mono to stoixeio p bghke me bitwise and
     daddi r8,$zero,52  # ka8e stoixeio p baginei aristera twn 52 xamhlwn bit to pros8etw ston deutero kataxwrhth: bazw sto kataxwrhth pou 8a xrhsimopoihsw san noumero to poses fores na kanei shift
     dsrlv r7,r7,r8   # ka8e stoixeio p baginei aristera twn 52 xamhlwn bit to pros8etw ston deutero kataxwrhth shift 52 fores de3ia
-    dadd r5,r5,r7   # ka8e stoixeio p baginei aristera twn 52 xamhlwn bit to pros8etw ston deutero kataxwrhth: pros8etw to stoixeio ston deutero kataxwrhth
     daddi r8,$zero,1 # afairesh apo exponent
     dsub r2,r2,r8 # afairesh apo exponent
+    dadd r5,r5,r7   # ka8e stoixeio p baginei aristera twn 52 xamhlwn bit to pros8etw ston deutero kataxwrhth: pros8etw to stoixeio ston deutero kataxwrhth  
     jal loop
 endloop: 
     dsll r3,r3,1    # teleutaio shift mantisa
-    and r7,r3,r6    # an to bit pou bgei aristera twn 52 einai 1
+    and r7,r3,r16    # an to bit pou bgei aristera twn 52 einai 1
     daddi r8,$zero,52  # ka8e stoixeio p baginei aristera twn 52 xamhlwn bit to pros8etw ston deutero kataxwrhth: bazw sto kataxwrhth pou 8a xrhsimopoihsw san noumero to poses fores na kanei shift
     dsrlv r7,r7,r8
     beq r7,$zero,roundDown
-    ld r9,A(r10)
-    beq r5,r9,roundDown
-    daddi r10,$zero,32
     daddi r5,r5,1   # tote stroggulopoihsh pros ta epanw
     daddi r20,$zero,1  # flag
     roundDown:      # alliws stroggulopoihsh pros ta katw
@@ -176,12 +177,10 @@ overflow:
     daddi r28,r28,1         # add 1 to counters
     daddi r29,r29,1
     beq r4,$zero,posoverflow    # check if positive or negative number
-    daddi r10,$zero,40
-    ld r5,mask(r10)             # load smallest int
+    dadd r5,r18,$zero             # load smallest int
     jal cvt
 posoverflow:
-    daddi r10,$zero,32
-    ld r5,mask(r10)             # load largest int
+    dadd r5,r17,$zero             # load largest int
     jal cvt
 negative_exp:  # arnhtiko exponent
     daddi r12,$zero,-2
