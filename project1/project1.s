@@ -1,8 +1,8 @@
 .data
     array:  
-        .word 0x43C0000000000000
+        .word 0x7FF0000000000000,0x7FF0000000000000
 
-    len:  .word 150
+    len:  .word 2
     
     mask: .word 0x7FF0000000000000,0x000FFFFFFFFFFFFF,0x0000000000000001,0x0010000000000000,0x7FFFFFFFFFFFFFFF,0x8000000000000000
 
@@ -12,7 +12,16 @@
 .text
 
 main:
-    ld r1,array($zero)
+    # r26-r31 counters
+    dadd r23,$zero,$zero # r23 counter
+    ld r24,len($zero)
+    daddi r18,$zero,8
+    dmul r24,r24,r18
+bigloop:    
+    slt r19,r23,r24
+    beq r19,$zero,end
+    daddi r20,$zero,0
+    ld r1,array(r23)
     ld r3,mask($zero)
     and r2,r1,r3
     daddi r10,$zero,52
@@ -27,6 +36,9 @@ main:
     daddi r10,$zero,16
     ld r5,mask(r10)
     and r4,r6,r5            # r4 sign
+    daddi r10,$zero,1024
+    beq r2,r10,checkabnormal
+normal:
     daddi r10,$zero,24
     ld r6,mask(r10)
     slt r11,r2,$zero
@@ -56,31 +68,77 @@ endloop:
     beq r5,r9,roundDown
     daddi r10,$zero,32
     daddi r5,r5,1   # tote stroggulopoihsh pros ta epanw
+    daddi r20,$zero,1  # flag
     roundDown:      # alliws stroggulopoihsh pros ta katw
-    beq r4,$zero,finish
+    beq r4,$zero,positive
     daddi r8,$zero,-1
     dmul r5,r5,r8
-finish:
-    halt
+    daddi r27,r27,1
+    jal cvt
+positive:
+    daddi r26,r26,1
+    jal cvt
 overflow:
+    daddi r28,r28,1
+    daddi r29,r29,1
     beq r4,$zero,posoverflow
     daddi r10,$zero,40
     ld r5,mask(r10)
-    halt
+    jal cvt
 posoverflow:
     daddi r10,$zero,32
     ld r5,mask(r10)
-    halt
+    jal cvt
 negative_exp:  # arnhtiko exponent
     daddi r12,$zero,-2
     slt r10,r12,r2 # tsekarw ton exponent an einai <-1 apeu8eias 0 an einai -1 tote 1 h -1 analoga to sign
     bne r10,$zero,applysign
-    dadd r5,$zero,$zero                   
-    halt
+    daddi r28,r28,1
+    bne r3,$zero,simzero
+    daddi r10,$zero,-1023
+    bne r2,r10,simzero
+    daddi r30,r30,1
+    dadd r5,$zero,$zero
+    jal cvt
+
+simzero:
+    dadd r5,$zero,$zero
+    beq r4,$zero,poszero
+    daddi r27,r27,1
+    jal cvt
+poszero:
+    daddi r26,r26,1                 
+    jal cvt
 applysign:
+    daddi r20,$zero,1  # flag
     beq r4,$zero,pos
     daddi r5,$zero,-1
-    halt
+    daddi r27,r27,1
+    jal cvt
 pos:
     daddi r5,$zero,1
+    daddi r26,r26,1
+    jal cvt
+checkabnormal:
+    bne r3,$zero,normal
+    daddi r25,r25,1
+    jal overflow
+cvt: 
+    l.d f2,array(r23)
+    daddi r23,r23,8
+    cvt.l.d f2,f2
+    mfc1 r6,f2
+    bne r20,$zero,round
+    jal bigloop
+
+round:
+    bne r4,$zero,neg
+    daddi r6,r6,1
+    jal bigloop
+
+neg:
+    daddi r6,r6,-1
+    jal bigloop
+
+end:
     halt
