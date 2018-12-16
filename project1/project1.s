@@ -80,7 +80,7 @@
         .word 0x770a483939c5727e,0xcb4170c41049716e,0x83f4c0789ddbdbba,0x94250e4aa486c7dd,0x2c3531f89301f254,0x75c342e852eef22b
         .word 0x4e7c73b87a42c714,0xaa3e17c816adae86,0x3c0ad04b835dc5af,0xbdc811ee3328e9b2,0xa252e99c4b027cb4,0x4913b35f141a5b6a
 
-    len:  .word 1
+    len:  .word 150
     
     mask: .word 0x7FF0000000000000,0x000FFFFFFFFFFFFF,0x0000000000000001,0x0010000000000000,0x7FFFFFFFFFFFFFFF,0x8000000000000000
 
@@ -105,31 +105,31 @@
 
 main:
     # r26-r31 counters
-    dadd r23,$zero,$zero # r23 counter
-    ld r24,len($zero)
-    daddi r18,$zero,8
-    dmul r24,r24,r18
+    dadd r23,$zero,$zero # r23 index counter
+    ld r24,len($zero)    # r24 max index
+    daddi r18,$zero,8    
+    dmul r24,r24,r18     # max_index*8 because 64bit data
 bigloop:    
-    slt r19,r23,r24
-    beq r19,$zero,end
-    daddi r20,$zero,0
-    ld r1,A(r23)
-    ld r3,mask($zero)
-    and r2,r1,r3
-    daddi r10,$zero,52
-    dsrav r2,r2,r10         
+    slt r19,r23,r24      # loop guard
+    beq r19,$zero,end    # go to prints    
+    daddi r20,$zero,0    # reset flag
+    ld r1,A(r23)         # take next number
+    ld r3,mask($zero)    # mask for polarized exponent
+    and r2,r1,r3         # logical end number with exponent mask
+    daddi r10,$zero,52   
+    dsrav r2,r2,r10      # shift right 52 times to have the real polarized exponent number
     daddi r10,$zero,1023    
     dsub r2,r2,r10          # r2 exponent without polarazation
-    daddi r10,$zero,8
-    ld r3,mask(r10)
+    daddi r10,$zero,8       # go to next mask
+    ld r3,mask(r10)         # mask for mantissa
     and r3,r1,r3            # r3 mantissa
     daddi r10,$zero,63      
-    dsrav r6,r1,r10
+    dsrav r6,r1,r10         # shift right 63 times
     daddi r10,$zero,16
-    ld r5,mask(r10)
-    and r4,r6,r5            # r4 sign
+    ld r5,mask(r10)         # mask for trash bits
+    and r4,r6,r5            # r4 sign   
     daddi r10,$zero,1024
-    beq r2,r10,checkabnormal
+    beq r2,r10,checkabnormal    # check if exponent has max number because it can represent infinity
 normal:
     daddi r10,$zero,24
     ld r6,mask(r10)
@@ -162,40 +162,40 @@ endloop:
     daddi r5,r5,1   # tote stroggulopoihsh pros ta epanw
     daddi r20,$zero,1  # flag
     roundDown:      # alliws stroggulopoihsh pros ta katw
-    beq r4,$zero,positive
+    beq r4,$zero,positive   # check if positive
     daddi r8,$zero,-1
     dmul r5,r5,r8
-    daddi r27,r27,1
+    daddi r27,r27,1         # multiply with -1 if negative
     jal cvt
 positive:
-    daddi r26,r26,1
+    daddi r26,r26,1         # increase pos counter
     jal cvt
 overflow:
-    daddi r28,r28,1
+    daddi r28,r28,1         # add 1 to counters
     daddi r29,r29,1
-    beq r4,$zero,posoverflow
+    beq r4,$zero,posoverflow    # check if positive or negative number
     daddi r10,$zero,40
-    ld r5,mask(r10)
+    ld r5,mask(r10)             # load smallest int
     jal cvt
 posoverflow:
     daddi r10,$zero,32
-    ld r5,mask(r10)
+    ld r5,mask(r10)             # load largest int
     jal cvt
 negative_exp:  # arnhtiko exponent
     daddi r12,$zero,-2
     slt r10,r12,r2 # tsekarw ton exponent an einai <-1 apeu8eias 0 an einai -1 tote 1 h -1 analoga to sign
-    bne r10,$zero,applysign
+    bne r10,$zero,applysign     # check sign for small numbers 1 or -1 because the given number is >|0.5|
     daddi r28,r28,1
-    bne r3,$zero,simzero
-    daddi r10,$zero,-1023
-    bne r2,r10,simzero
-    daddi r30,r30,1
+    bne r3,$zero,simzero        # check if mantissa is zero
+    daddi r10,$zero,-1023       # check if exponent polarized is zero
+    bne r2,r10,simzero          # check if exponent polarized is zero
+    daddi r30,r30,1             # real zero
     dadd r5,$zero,$zero
     jal cvt
 
 simzero:
     dadd r5,$zero,$zero
-    beq r4,$zero,poszero
+    beq r4,$zero,poszero            # check if zero+ or zero- to change the appropriate counters
     daddi r27,r27,1
     jal cvt
 poszero:
@@ -203,26 +203,26 @@ poszero:
     jal cvt
 applysign:
     daddi r20,$zero,1  # flag
-    beq r4,$zero,pos
-    daddi r5,$zero,-1
-    daddi r27,r27,1
+    beq r4,$zero,pos      # if >0.5 or <-0.5           
+    daddi r5,$zero,-1     # if x<=-0.5
+    daddi r27,r27,1         
     jal cvt
 pos:
-    daddi r5,$zero,1
+    daddi r5,$zero,1      # if x>=0.5
     daddi r26,r26,1
     jal cvt
 checkabnormal:
-    bne r3,$zero,normal
-    daddi r25,r25,1
+    bne r3,$zero,normal     # if mantissa is zero then represents infinity
+    daddi r25,r25,1         # increase counter and go to overflow
     jal overflow
 cvt: 
-    l.d f2,A(r23)
-    cvt.l.d f2,f2
-    mfc1 r6,f2
-    bne r20,$zero,round
+    l.d f2,A(r23)           # load integer
+    cvt.l.d f2,f2           # convert fp to integer
+    mfc1 r6,f2              # move it to r6
+    bne r20,$zero,round     # check if it need rounding
     jal store
 
-round:
+round:                      # and check sign for negative or positive rounding
     bne r4,$zero,neg
     daddi r6,r6,1
     jal store
@@ -232,7 +232,7 @@ neg:
     jal store
 
 store:
-    sd r5,B(r23)
+    sd r5,B(r23)            # Store b,c array
     dsub r6,r6,r5
     sd r6,C(r23)
     daddi r23,r23,8
