@@ -1,6 +1,6 @@
 .data
     A:  
-        .word 0x400D99999999999A,0x9e01794de636dc67,0x0b0cb1960d169db8,0x470bc36e1ec57160,0x8e7ba728419e10ef,0x485ffd8b093645e7
+        .word 0x0000000000000000,0x7FF0000000000000,0xFFF0000000000000,0x3FE0000000000000,0x3FD3333333333333,0xD74C000000000000
         .word 0xa5ce31a776ac45bd,0x1e5bda477953eb1c,0xc44c1f6397823de6,0x164e578ebf5dc9f3,0x7bfcb33e0203a78f,0x44a138992d451a17
         .word 0x3930ac7b546451bd,0xeec5f3253df19892,0x19ce1a71c3c48076,0x7975d88993e78602,0x9c014ab9f1a5c114,0x8125966d72542168
         .word 0x9652bbbc2c651e82,0xc393aa08e92c9654,0x818b860afc4ea077,0xf98960c14edbc424,0xc4cc6ba8eb8d4f96,0x15d63669d2afe300
@@ -127,8 +127,9 @@ bigloop:
     beq r19,$zero,end    # go to prints    
     daddi r20,$zero,0    # reset flag
     ld r1,A(r23)         # take next number
-    and r2,r1,r13         # logical end number with exponent mask
-    daddi r10,$zero,52   
+    l.d f2,A(r23)           # load integer
+    daddi r10,$zero,52
+    and r2,r1,r13         # logical end number with exponent mask  
     dsrav r2,r2,r10      # shift right 52 times to have the real polarized exponent number
     daddi r10,$zero,1023    
     dsub r2,r2,r10          # r2 exponent without polarazation
@@ -217,7 +218,6 @@ checkabnormal:
     daddi r25,r25,1         # increase counter and go to overflow
     jal overflow
 cvt: 
-    l.d f2,A(r23)           # load integer
     cvt.l.d f2,f2           # convert fp to integer
     mfc1 r6,f2              # move it to r6
     bne r20,$zero,round     # check if it need rounding
@@ -240,7 +240,7 @@ store:
     jal bigloop
 
 end:
-    lwu r21,CONTROL(r0) # r25-I,  r27-N, r28-D, r29-T, r30-Z
+    lwu r21,CONTROL(r0) # r25-I, r26-P, r27-N, r28-D, r29-T, r30-Z
     lwu r22,DATA(r0)    # r21 a
 	daddi r20,r0,1;
     daddi r23,r0,4;
